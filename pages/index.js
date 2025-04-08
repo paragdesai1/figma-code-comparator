@@ -52,6 +52,21 @@ export default function DesignCompare() {
     console.error('Failed to load page in iframe. Website might block iframe embedding.');
   };
 
+  // Add CORS error detection
+  const handleIframeLoad = () => {
+    const iframe = iframeRef.current;
+    try {
+      // Try to access iframe content - will throw if blocked by CORS
+      if (iframe?.contentWindow?.location?.href) {
+        setIframeError(false);
+      }
+    } catch (e) {
+      // CORS error or other security restriction
+      console.error('CORS or security restriction detected:', e);
+      setIframeError(true);
+    }
+  };
+
   // Fallback to screenshot if iframe fails
   const getFallbackScreenshot = async () => {
     try {
@@ -271,13 +286,23 @@ export default function DesignCompare() {
                       style={{ background: 'white' }}
                       allow="fullscreen"
                       onError={handleIframeError}
-                      onLoad={() => setIframeError(false)}
+                      onLoad={handleIframeLoad}
+                      sandbox="allow-same-origin allow-scripts"
                     />
                   ) : liveUrl && iframeError ? (
-                    <div className="w-full h-[800px] flex items-center justify-center">
+                    <div className="w-full h-[800px] flex flex-col items-center justify-center space-y-4">
                       <p className="text-red-500">
-                        Unable to load page in iframe. Switching to screenshot mode...
+                        Unable to load page in iframe due to security restrictions.
                       </p>
+                      <p className="text-gray-600">
+                        Switching to screenshot mode...
+                      </p>
+                      <img
+                        src={`/api/screenshot?url=${encodeURIComponent(liveUrl)}`}
+                        alt="Live Page Screenshot"
+                        className="max-w-full"
+                        crossOrigin="anonymous"
+                      />
                     </div>
                   ) : null}
                 </div>
