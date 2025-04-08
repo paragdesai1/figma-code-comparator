@@ -13,6 +13,8 @@ export default function DesignCompare() {
   const [zoom, setZoom] = useState(1);
   const [iframeError, setIframeError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const canvasRef = useRef(null);
   const canvasWrapperRef = useRef(null);
   const iframeRef = useRef(null);
@@ -52,13 +54,25 @@ export default function DesignCompare() {
     console.error('Failed to load page in iframe. Website might block iframe embedding.');
   };
 
-  // Add CORS error detection
   const handleIframeLoad = () => {
     const iframe = iframeRef.current;
     try {
       // Try to access iframe content - will throw if blocked by CORS
       if (iframe?.contentWindow?.location?.href) {
-        setIframeError(false);
+        const iframeContent = iframe.contentDocument || iframe.contentWindow.document;
+        // Check for common login form elements
+        const loginForm = iframeContent.querySelector('form') && 
+          (iframeContent.querySelector('input[type="password"]') ||
+           iframeContent.querySelector('input[name*="password" i]'));
+        
+        if (loginForm) {
+          setAuthError(true);
+          setIframeError(true);
+        } else {
+          setAuthError(false);
+          setIframeError(false);
+          setIsAuthenticated(true);
+        }
       }
     } catch (e) {
       // CORS error or other security restriction
@@ -287,22 +301,43 @@ export default function DesignCompare() {
                       allow="fullscreen"
                       onError={handleIframeError}
                       onLoad={handleIframeLoad}
-                      sandbox="allow-same-origin allow-scripts"
+                      sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
                     />
                   ) : liveUrl && iframeError ? (
                     <div className="w-full h-[800px] flex flex-col items-center justify-center space-y-4">
-                      <p className="text-red-500">
-                        Unable to load page in iframe due to security restrictions.
-                      </p>
-                      <p className="text-gray-600">
-                        Switching to screenshot mode...
-                      </p>
-                      <img
-                        src={`/api/screenshot?url=${encodeURIComponent(liveUrl)}`}
-                        alt="Live Page Screenshot"
-                        className="max-w-full"
-                        crossOrigin="anonymous"
-                      />
+                      {authError ? (
+                        <>
+                          <p className="text-red-500">
+                            This page requires authentication.
+                          </p>
+                          <p className="text-gray-600">
+                            Please log in to the page in a separate tab first, then try comparing again.
+                          </p>
+                          <a 
+                            href={liveUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                          >
+                            Open Page in New Tab
+                          </a>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-red-500">
+                            Unable to load page in iframe due to security restrictions.
+                          </p>
+                          <p className="text-gray-600">
+                            Switching to screenshot mode...
+                          </p>
+                          <img
+                            src={`/api/screenshot?url=${encodeURIComponent(liveUrl)}`}
+                            alt="Live Page Screenshot"
+                            className="max-w-full"
+                            crossOrigin="anonymous"
+                          />
+                        </>
+                      )}
                     </div>
                   ) : null}
                 </div>
