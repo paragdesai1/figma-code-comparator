@@ -143,7 +143,51 @@ export default function DesignCompare() {
       </div>
 
       {comparisonReady && (
-        <div className="mt-6">
+        <div className="mt-6 space-y-4">
+          <div className="flex space-x-4">
+            <button
+              className={`px-4 py-2 rounded ${viewMode === 'side-by-side' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+              onClick={() => setViewMode('side-by-side')}
+            >
+              Side by Side
+            </button>
+            <button
+              className={`px-4 py-2 rounded ${viewMode === 'diff' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+              onClick={() => setViewMode('diff')}
+            >
+              Diff View
+            </button>
+          </div>
+
+          {viewMode === 'side-by-side' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="border p-4">
+                <h2 className="text-lg font-semibold mb-2">Figma Design</h2>
+                <div className="overflow-auto max-h-[800px]">
+                  <img
+                    src={figmaImageUrl}
+                    alt="Figma Design"
+                    className="max-w-full"
+                    crossOrigin="anonymous"
+                  />
+                </div>
+              </div>
+              <div className="border p-4">
+                <h2 className="text-lg font-semibold mb-2">Live Page</h2>
+                <div className="overflow-auto max-h-[800px]">
+                  {liveUrl && (
+                    <img
+                      src={`https://api.screenshotone.com/take?access_key=${process.env.NEXT_PUBLIC_SCREENSHOTONE_KEY || 'demo'}&url=${encodeURIComponent(liveUrl)}&full_page=true&format=png`}
+                      alt="Live Page"
+                      className="max-w-full"
+                      crossOrigin="anonymous"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {viewMode === 'diff' && (
             <div className="w-full border">
               <h2 className="text-lg font-semibold mb-2">Visual Diff</h2>
