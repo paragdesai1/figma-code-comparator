@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   try {
     const figmaRes = await fetch(`https://api.figma.com/v1/files/${fileKey}`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        'X-Figma-Token': token
       },
     });
 
