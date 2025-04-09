@@ -1,67 +1,131 @@
-# Figma vs Live Code Comparator
+# Figma Code Comparator
 
-A web-based tool for visually comparing Figma designs with live developed pages. Useful for QA, design-to-dev handoff, and catching pixel-level discrepancies.
+A powerful tool for comparing Figma designs with live websites, inspired by Pixelay. This project consists of a Figma plugin and Chrome extension that work together to provide accurate visual comparison between designs and implementations.
 
-## 🔥 Features
+## Features
 
-- Import Figma designs via URL (no plugin required)
-- View side-by-side, overlay, or pixel-diff comparisons
-- Zoom, pan, and drag support for detailed inspection
-- Visual diff using `pixelmatch` + ScreenshotOne API
-- Deployable on [Render.com](https://render.com)
+- Compare Figma designs with live websites in real-time
+- Multiple comparison modes:
+  - Overlay with adjustable opacity
+  - Split view with draggable divider
+  - Difference highlighting
+  - Side-by-side comparison
+- Support for responsive design testing
+- Built-in measurement tools and guides
+- Works with any website (local development, staging, or production)
 
-## 🚀 Getting Started
+## Project Structure
 
-### 1. Clone the repo
-
-```bash
-git clone https://github.com/paragdesai1/figma-code-comparator.git
-cd figma-code-comparator
+```
+figma-code-comparator/
+├── chrome-extension/     # Chrome extension code
+│   ├── manifest.json    # Extension manifest
+│   ├── background.js    # Background script
+│   ├── content.js       # Content script for overlay
+│   └── popup.html       # Extension popup
+├── figma-plugin/        # Figma plugin code
+│   ├── manifest.json    # Plugin manifest
+│   ├── code.ts         # Plugin main code
+│   └── ui.html         # Plugin UI
+└── web/                 # Web interface (Next.js)
+    └── pages/
+        └── index.tsx    # Main comparison interface
 ```
 
-### 2. Set up environment
+## Setup
 
-Create a `.env` file:
+### Prerequisites
 
-```env
-NEXT_PUBLIC_SCREENSHOTONE_KEY=your_screenshotone_api_key
-FIGMA_API_KEY=your_figma_api_key
-```
+- Node.js (v16 or higher)
+- npm or yarn
+- Chrome browser
+- Figma desktop app
 
-> Get your ScreenshotOne key here: https://screenshotone.com  
-> Get your Figma personal token from: https://www.figma.com/developers/api#access-tokens
+### Installation
 
-### 3. Install dependencies
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/figma-code-comparator.git
+   cd figma-code-comparator
+   ```
 
-```bash
-npm install
-```
+2. Install dependencies:
+   ```bash
+   # Install Chrome extension dependencies
+   cd chrome-extension
+   npm install
 
-### 4. Run locally
+   # Install Figma plugin dependencies
+   cd ../figma-plugin
+   npm install
 
-```bash
-npm run dev
-```
+   # Install web interface dependencies
+   cd ../web
+   npm install
+   ```
 
-Visit `http://localhost:3000`
+3. Build the project:
+   ```bash
+   # Build Chrome extension
+   cd chrome-extension
+   npm run build
 
-## 📦 Deploying to Render
+   # Build Figma plugin
+   cd ../figma-plugin
+   npm run build
 
-1. Push this repo to GitHub
-2. Go to [Render](https://render.com)
-3. Create a new Web Service:
-   - Select your repo
-   - Set build command: `npm install && npm run build`
-   - Set start command: `npm run start` (or `npm run dev` for testing)
-   - Add environment variables from your `.env`
+   # Build web interface
+   cd ../web
+   npm run build
+   ```
 
-## 🧩 Tech Stack
+### Development Setup
 
-- React + Tailwind
-- Pixelmatch for visual diffing
-- ScreenshotOne API for page screenshots
-- Figma API for design frames
+1. Load the Chrome extension:
+   - Open Chrome and go to `chrome://extensions/`
+   - Enable "Developer mode"
+   - Click "Load unpacked" and select the `chrome-extension` directory
 
----
+2. Import the Figma plugin:
+   - Open Figma desktop app
+   - Go to Plugins > Development > Import plugin from manifest
+   - Select the `figma-plugin/manifest.json` file
 
-MIT License © 2025 [@paragdesai1](https://github.com/paragdesai1)
+3. Start the web interface:
+   ```bash
+   cd web
+   npm run dev
+   ```
+
+## Usage
+
+1. In Figma:
+   - Select the frames or components you want to compare
+   - Run the Figma Code Comparator plugin
+   - Click "Export Selection" to prepare the designs for comparison
+
+2. In Chrome:
+   - Navigate to the website you want to compare
+   - Click the Figma Code Comparator extension icon
+   - Choose your comparison mode
+   - Use the overlay controls to adjust the view
+
+3. Features:
+   - Drag the split view divider to compare different parts of the design
+   - Use the opacity slider in overlay mode
+   - Enable measurement guides to check spacing and alignment
+   - Switch between comparison modes to find differences
+
+## Contributing
+
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Inspired by the Pixelay Figma plugin
+- Built with React, TypeScript, and Tailwind CSS
+- Uses Figma Plugin API and Chrome Extension APIs

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 16px;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .button {
+      background: #18A0FB;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .button:hover {
+      background: #0D8DE3;
+    }
+    
+    .button:disabled {
+      background: #E5E5E5;
+      cursor: not-allowed;
+    }
+    
+    .frame-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 8px;
+      border: 1px solid #E5E5E5;
+      border-radius: 6px;
+    }
+    
+    .frame-item {
+      display: flex;
+      align-items: center;
+      padding: 8px;
+      background: #F5F5F5;
+      border-radius: 4px;
+    }
+    
+    .frame-info {
+      flex: 1;
+      font-size: 12px;
+    }
+    
+    .frame-name {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    
+    .frame-dimensions {
+      color: #666;
+    }
+    
+    .instructions {
+      color: #666;
+      font-size: 13px;
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+
+    .status {
+      font-size: 12px;
+      padding: 8px;
+      border-radius: 4px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .status.success {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+
+    .status.error {
+      background: #FFEBEE;
+      color: #C62828;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="instructions">
+      Select one or more frames from your design that you want to compare with the website.
+      The selected frames will be available in the Chrome extension for overlay comparison.
+    </div>
+    
+    <button id="select-frames" class="button">Select Frames</button>
+    
+    <div id="frame-list" class="frame-list" style="display: none;">
+      <div class="instructions">Selected frames:</div>
+      <!-- Frame items will be added here -->
+    </div>
+    
+    <button id="export-frames" class="button" disabled>Export to Chrome Extension</button>
+
+    <div id="status" class="status"></div>
+  </div>
+
+  <script>
+    let selectedFrames = [];
+    
+    // Helper function to show status message
+    function showStatus(message, type) {
+      console.log('Status:', message, type);
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status ${type}`;
+      status.style.display = 'block';
+      setTimeout(() => {
+        status.style.display = 'none';
+      }, 3000);
+    }
+    
+    document.getElementById('select-frames').onclick = () => {
+      console.log('Select frames button clicked');
+      parent.postMessage({ pluginMessage: { type: 'export-frames' } }, '*');
+      showStatus('Exporting frames...', 'success');
+    };
+    
+    document.getElementById('export-frames').onclick = () => {
+      console.log('Export to extension button clicked');
+      if (selectedFrames.length > 0) {
+        // Send frames to plugin code for export
+        parent.postMessage({ 
+          pluginMessage: { 
+            type: 'send-to-extension',
+            frames: selectedFrames
+          } 
+        }, '*');
+        showStatus('Sending frames to extension...', 'success');
+      } else {
+        showStatus('No frames selected to export', 'error');
+      }
+    };
+    
+    // Listen for messages from the plugin code
+    window.onmessage = async (event) => {
+      const msg = event.data.pluginMessage;
+      console.log('Received message:', msg);
+
+      if (!msg) return;
+
+      if (msg.type === 'export-result') {
+        if (msg.error) {
+          showStatus(msg.error, 'error');
+          return;
+        }
+        
+        // Handle successful export
+        if (msg.payload && msg.payload.frames) {
+          console.log('Received exported frames:', msg.payload.frames);
+          selectedFrames = msg.payload.frames;
+          
+          // Show frame list
+          const frameList = document.getElementById('frame-list');
+          frameList.style.display = 'block';
+          frameList.innerHTML = `
+            <div class="instructions">Selected frames:</div>
+            ${selectedFrames.map(frame => `
+              <div class="frame-item">
+                <div class="frame-info">
+                  <div class="frame-name">${frame.name}</div>
+                  <div class="frame-dimensions">${frame.width}x${frame.height}</div>
+                </div>
+              </div>
+            `).join('')}
+          `;
+          
+          // Enable export button
+          document.getElementById('export-frames').disabled = false;
+          showStatus(`${selectedFrames.length} frame(s) selected`, 'success');
+        }
+        return;
+      }
+
+      if (msg.type === 'frames-ready-for-extension') {
+        console.log('Received frames for extension:', {
+          frameCount: msg.frames.length,
+          frames: msg.frames.map(f => ({
+            name: f.name,
+            id: f.id,
+            hasImageUrl: !!f.imageUrl
+          }))
+        });
+
+        try {
+          // Forward frames to Chrome extension
+          window.parent.postMessage({
+            type: 'figma-frames',
+            frames: msg.frames
+          }, '*');
+          showStatus('Frames sent to Chrome extension successfully!', 'success');
+        } catch (error) {
+          console.error('Error forwarding frames to extension:', error);
+          showStatus('Error sending frames to extension', 'error');
+        }
+        return;
+      }
+
+      // Handle selected frames
+      if (msg.type === 'selected-frames') {
+        const frames = msg.frames;
+        if (!frames || frames.length === 0) {
+          showStatus('No frames selected', 'error');
+          document.getElementById('export-button').disabled = true;
+          return;
+        }
+
+        // Update UI with selected frames
+        const framesList = document.getElementById('frames-list');
+        framesList.innerHTML = frames.map(frame => 
+          `<div class="frame-item">
+            <span>${frame.name}</span>
+            <span class="frame-dimensions">${frame.width}x${frame.height}</span>
+           </div>`
+        ).join('');
+        
+        document.getElementById('export-button').disabled = false;
+        showStatus(`${frames.length} frame(s) selected`, 'success');
+      }
+    };
+  </script>
+</body>
+</html> 

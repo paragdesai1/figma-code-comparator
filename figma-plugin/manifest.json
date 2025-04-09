@@ -1,0 +1,14 @@
+{
+  "name": "Design Comparator",
+  "id": "design-comparator",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "ui.html",
+  "editorType": ["figma", "dev"],
+  "networkAccess": {
+    "allowedDomains": ["*"],
+    "reasoning": "The plugin needs to communicate with the Next.js app for Jira integration"
+  },
+  "permissions": ["currentuser"],
+  "capabilities": ["inspect", "textreview", "vscode"]
+} 
