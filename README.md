@@ -1,6 +1,6 @@
 # Figma Code Comparator
 
-A powerful tool for comparing Figma designs with live websites, inspired by Pixelay. This project consists of a Figma plugin and Chrome extension that work together to provide accurate visual comparison between designs and implementations.
+A Chrome extension for comparing Figma designs with live websites, inspired by Pixelay. This tool helps developers and designers ensure pixel-perfect implementation of designs.
 
 ## Features
 
@@ -22,30 +22,19 @@ A powerful tool for comparing Figma designs with live websites, inspired by Pixe
 - Built-in measurement tools and guides
 - Works with any website (local development, staging, or production)
 
-## Version History
-
-### v1.2.0
-- Enhanced UI controls with improved visual feedback
-- Added smooth hover transitions and tooltips
-- Implemented consistent button styling across modes
-- Updated documentation to reflect UI changes
-
 ## Project Structure
 
 ```
 figma-code-comparator/
 ├── chrome-extension/     # Chrome extension code
 │   ├── manifest.json    # Extension manifest
-│   ├── background.js    # Background script
-│   ├── content.js       # Content script for overlay
-│   └── popup.html       # Extension popup
-├── figma-plugin/        # Figma plugin code
-│   ├── manifest.json    # Plugin manifest
-│   ├── code.ts         # Plugin main code
-│   └── ui.html         # Plugin UI
-└── web/                 # Web interface (Next.js)
-    └── pages/
-        └── index.tsx    # Main comparison interface
+│   ├── src/            # Source code
+│   │   ├── content.ts  # Content script for overlay
+│   │   ├── popup.tsx   # Extension popup
+│   │   └── types/      # TypeScript types
+│   └── public/         # Static assets
+└── web/                # Web interface (Next.js)
+    └── pages/          # Application pages
 ```
 
 ## Setup
@@ -55,7 +44,6 @@ figma-code-comparator/
 - Node.js (v16 or higher)
 - npm or yarn
 - Chrome browser
-- Figma desktop app
 
 ### Installation
 
@@ -71,10 +59,6 @@ figma-code-comparator/
    cd chrome-extension
    npm install
 
-   # Install Figma plugin dependencies
-   cd ../figma-plugin
-   npm install
-
    # Install web interface dependencies
    cd ../web
    npm install
@@ -84,10 +68,6 @@ figma-code-comparator/
    ```bash
    # Build Chrome extension
    cd chrome-extension
-   npm run build
-
-   # Build Figma plugin
-   cd ../figma-plugin
    npm run build
 
    # Build web interface
@@ -102,12 +82,7 @@ figma-code-comparator/
    - Enable "Developer mode"
    - Click "Load unpacked" and select the `chrome-extension` directory
 
-2. Import the Figma plugin:
-   - Open Figma desktop app
-   - Go to Plugins > Development > Import plugin from manifest
-   - Select the `figma-plugin/manifest.json` file
-
-3. Start the web interface:
+2. Start the web interface:
    ```bash
    cd web
    npm run dev
@@ -115,32 +90,33 @@ figma-code-comparator/
 
 ## Usage
 
-1. In Figma:
-   - Select the frames or components you want to compare
-   - Run the Figma Code Comparator plugin
-   - Click "Export Selection" to prepare the designs for comparison
+1. Navigate to your Figma design in Chrome
+2. Click the Figma Code Comparator extension icon
+3. Choose your comparison mode
+4. Use the overlay controls to adjust the view
 
-2. In Chrome:
-   - Navigate to the website you want to compare
-   - Click the Figma Code Comparator extension icon
-   - Choose your comparison mode
-   - Use the overlay controls to adjust the view
+## Features
 
-3. Features:
-   - Drag the split view divider to compare different parts of the design
-   - Use the opacity slider in overlay mode
-   - Enable measurement guides to check spacing and alignment
-   - Switch between comparison modes to find differences
+- Drag the split view divider to compare different parts of the design
+- Use the opacity slider in overlay mode
+- Enable measurement guides to check spacing and alignment
+- Switch between comparison modes to find differences
+
+## Version History
+
+### v1.2.0
+- Enhanced UI controls with improved visual feedback
+- Added smooth hover transitions and tooltips
+- Implemented consistent button styling across modes
+- Updated documentation to reflect UI changes
 
 ## Contributing
 
 Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-When contributing, please ensure all changes maintain synchronization across:
-- Version numbers in package.json and manifest.json
-- UI/Design elements and controls
-- Documentation and README
-- Code implementation and comments
+## Security
+
+Please review our [Security Policy](SECURITY.md) for guidelines on reporting vulnerabilities and best practices.
 
 ## License
 

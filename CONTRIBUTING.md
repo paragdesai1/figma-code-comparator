@@ -8,7 +8,6 @@ Thank you for your interest in contributing! This guide will help you maintain c
    - Node.js (v16 or higher)
    - npm or yarn
    - Chrome browser
-   - Figma desktop app
    - VSCode (recommended)
 
 2. **Recommended VSCode Extensions**

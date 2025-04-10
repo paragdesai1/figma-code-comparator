@@ -43,12 +43,7 @@ When using the Figma Code Comparator:
    - Keep extension updated
    - Review permissions carefully
 
-3. **Figma Plugin**
-   - Only install from official Figma Plugin store
-   - Keep plugin updated
-   - Review access requests
-
-4. **Data Security**
+3. **Data Security**
    - No design data is stored externally
    - All comparisons happen locally
    - Screenshots are temporary

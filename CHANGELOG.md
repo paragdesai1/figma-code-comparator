@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Button hover states consistency
 - Mode switching visual feedback
 
+### Removed
+- Figma plugin integration (starting fresh with Chrome extension only)
+
 ## [1.1.0] - 2024-03-20
 
 ### Added
@@ -36,5 +39,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial release
 - Basic comparison functionality
-- Chrome extension setup
-- Figma plugin integration 
+- Chrome extension setup 
