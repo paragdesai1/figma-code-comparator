@@ -1,80 +1,66 @@
-/// <reference types="@figma/plugin-typings" />
-import { jest } from '@jest/globals';
+import '@testing-library/jest-dom';
+import { jest, beforeEach } from '@jest/globals';
 
-declare module globalThis {
-  var figma: FigmaMock;
-  var fetch: jest.Mock;
-  var __html__: string;
-}
+type JestFn = ReturnType<typeof jest.fn>;
 
-type FigmaMock = {
-  closePlugin: jest.Mock;
-  notify: jest.Mock;
-  createRectangle: jest.Mock;
-  createText: jest.Mock;
-  on: jest.Mock;
-  off: jest.Mock;
-  showUI: jest.Mock;
-  base64Encode: jest.Mock;
-  fileKey: string;
+// Define types for our mocks
+interface FigmaMock {
   ui: {
-    postMessage: jest.Mock;
-    onmessage: jest.Mock | undefined;
-    show: jest.Mock;
-    hide: jest.Mock;
-    resize: jest.Mock;
-    close: jest.Mock;
+    postMessage: JestFn;
+    onmessage: JestFn;
   };
-  viewport: {
-    scrollAndZoomIntoView: jest.Mock;
+  closePlugin: JestFn;
+  notify: JestFn;
+  showUI: JestFn;
+  root: {
+    children: any[];
   };
   currentPage: {
     selection: any[];
   };
+  getNodeById?: JestFn;
 }
 
-interface ExportSettingsImage {
-  format: 'JPG' | 'PNG';
-  contentsOnly?: boolean;
-  useAbsoluteBounds?: boolean;
-  suffix?: string;
-  constraint?: {
-    type: 'SCALE' | 'WIDTH' | 'HEIGHT';
-    value: number;
-  };
-}
-
-const mockFigma: FigmaMock = {
-  closePlugin: jest.fn(),
-  notify: jest.fn(),
-  createRectangle: jest.fn(),
-  createText: jest.fn(),
-  on: jest.fn(),
-  off: jest.fn(),
-  showUI: jest.fn(),
-  base64Encode: jest.fn(),
-  fileKey: 'mock-file-key',
+// Mock the Figma plugin API
+const figmaMock: FigmaMock = {
   ui: {
     postMessage: jest.fn(),
     onmessage: jest.fn(),
-    show: jest.fn(),
-    hide: jest.fn(),
-    resize: jest.fn(),
-    close: jest.fn(),
   },
-  viewport: {
-    scrollAndZoomIntoView: jest.fn(),
+  closePlugin: jest.fn(),
+  notify: jest.fn(),
+  showUI: jest.fn(),
+  root: {
+    children: [],
   },
   currentPage: {
     selection: [],
   },
+  getNodeById: jest.fn(),
 };
 
-globalThis.__html__ = '<div>Mock Plugin UI</div>';
-globalThis.figma = mockFigma;
-globalThis.fetch = jest.fn(() => Promise.resolve(new Response()));
+declare global {
+  interface Window {
+    fetch: JestFn;
+  }
+  // eslint-disable-next-line no-var
+  var figma: FigmaMock;
+  // eslint-disable-next-line no-var
+  var __html__: string;
+}
 
+// Assign mocks to global object
+globalThis.figma = figmaMock;
+globalThis.__html__ = '';
+
+// Mock fetch API
 beforeEach(() => {
-  jest.clearAllMocks();
-  globalThis.figma.currentPage.selection = [];
+  Object.defineProperty(globalThis, 'fetch', {
+    value: jest.fn(() =>
+      Promise.resolve({
+        json: () => Promise.resolve({}),
+      } as Response)
+    ),
+    writable: true,
+  });
 }); 

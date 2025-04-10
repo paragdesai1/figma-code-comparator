@@ -4,12 +4,12 @@ import { compareFrames } from './comparison';
 import { createJiraIssue, uploadScreenshot } from './services/api';
 
 interface PluginMessage {
-  type: 'get-selection' | 'export-frames' | 'select-nodes' | 'select-frame';
+  type: 'get-selection' | 'export-frames' | 'select-nodes';
   payload?: any;
 }
 
 interface UIMessage {
-  type: 'selection-result' | 'export-result' | 'error' | 'frame-selected';
+  type: 'selection-result' | 'export-result' | 'error';
   payload: any;
 }
 
@@ -19,7 +19,6 @@ interface FrameInfo {
   width: number;
   height: number;
   imageUrl?: string;
-  url?: string;
 }
 
 // Show UI with a reasonable size
@@ -40,10 +39,6 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
       case 'select-nodes':
         handleNodeSelection(msg.payload);
         break;
-        
-      case 'select-frame':
-        await handleSingleFrameSelection();
-        break;
     }
   } catch (error: unknown) {
     figma.ui.postMessage({
@@ -52,59 +47,6 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
     });
   }
 };
-
-// Handle single frame selection for comparison
-async function handleSingleFrameSelection() {
-  // Get the current selection
-  const selection = figma.currentPage.selection;
-  
-  // Check if exactly one frame is selected
-  if (selection.length !== 1 || selection[0].type !== 'FRAME') {
-    figma.notify('Please select exactly one frame');
-    return;
-  }
-
-  const frame = selection[0];
-  
-  try {
-    // Export the frame as PNG
-    const bytes = await frame.exportAsync({
-      format: 'PNG',
-      constraint: { type: 'SCALE', value: 2 }
-    });
-
-    // Get the file URL
-    const fileUrl = figma.fileKey ? `https://www.figma.com/file/${figma.fileKey}?node-id=${frame.id}` : null;
-
-    // Convert bytes to base64 for preview
-    const base64 = figma.base64Encode(bytes);
-    const imageUrl = `data:image/png;base64,${base64}`;
-
-    // Send the frame data back to the UI
-    figma.ui.postMessage({
-      type: 'frame-selected',
-      payload: {
-        frame: {
-          id: frame.id,
-          name: frame.name,
-          width: frame.width,
-          height: frame.height,
-          imageUrl,
-          url: fileUrl
-        }
-      }
-    });
-
-    // Notify success
-    figma.notify('Frame selected successfully');
-    
-    // Close the plugin UI since we're done
-    figma.closePlugin();
-  } catch (error) {
-    console.error('Failed to export frame:', error);
-    figma.notify('Failed to export frame');
-  }
-}
 
 // Handle frame selection
 function handleFrameSelection() {

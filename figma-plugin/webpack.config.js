@@ -3,21 +3,13 @@ const path = require('path');
 module.exports = {
   mode: 'development',
   entry: {
-    code: './src/plugin.ts'
+    code: './code.ts'
   },
   module: {
     rules: [
       {
         test: /\.tsx?$/,
-        use: [{
-          loader: 'ts-loader',
-          options: {
-            transpileOnly: true,
-            compilerOptions: {
-              noEmit: false
-            }
-          }
-        }],
+        use: 'ts-loader',
         exclude: /node_modules/,
       },
     ],

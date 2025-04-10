@@ -12,37 +12,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return false;
       
     case 'START_COMPARISON':
-      // Forward to active tab
+      // Notify content script to initialize comparison UI
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const activeTab = tabs[0];
-        if (activeTab && activeTab.id) {
-          console.log('Sending INIT_COMPARISON to tab:', activeTab.id);
-          chrome.tabs.sendMessage(activeTab.id, { type: 'INIT_COMPARISON' }, response => {
-            console.log('Content script response:', response);
-            sendResponse(response);
+        if (tabs[0]?.id) {
+          console.log('Sending INIT_COMPARISON to tab:', tabs[0].id);
+          chrome.tabs.sendMessage(tabs[0].id, { type: 'INIT_COMPARISON' }, () => {
+            sendResponse({ success: true });
           });
         } else {
-          console.error('No active tab found');
           sendResponse({ success: false, error: 'No active tab found' });
         }
       });
       return true;
-      
+
     case 'FIGMA_FRAMES':
-      // Forward frames to active tab
+      // Forward frames to content script
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const activeTab = tabs[0];
-        if (activeTab && activeTab.id) {
-          console.log('Sending frames to tab:', activeTab.id);
-          chrome.tabs.sendMessage(activeTab.id, {
+        if (tabs[0]?.id) {
+          console.log('Forwarding frames to content script:', message.frames);
+          chrome.tabs.sendMessage(tabs[0].id, {
             type: 'FIGMA_FRAMES',
             frames: message.frames
-          }, response => {
-            console.log('Content script response:', response);
-            sendResponse(response);
+          }, () => {
+            sendResponse({ success: true });
           });
         } else {
-          console.error('No active tab found');
           sendResponse({ success: false, error: 'No active tab found' });
         }
       });
@@ -70,7 +64,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
 
     default:
-      console.log('Unknown message type:', message.type);
       sendResponse({ success: false, error: 'Unknown message type' });
       return false;
   }
@@ -149,4 +142,14 @@ async function handleCaptureDifferences() {
   } catch (error) {
     console.error('Error capturing differences:', error);
   }
-} 
+}
+
+chrome.action.onClicked.addListener((tab) => {
+    if (!tab.id) return;
+    
+    chrome.tabs.sendMessage(tab.id, {
+        type: 'TOGGLE_UI'
+    }).catch(error => {
+        console.error('Error sending message:', error);
+    });
+}); 

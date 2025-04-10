@@ -1,277 +1,450 @@
-// Add FigmaFrame interface at the top of the file
+// Constants
+const OVERLAY_ID = 'figma-overlay';
+const CONTROLS_ID = 'figma-controls';
+
+// Types
 interface FigmaFrame {
     id: string;
     name: string;
     width: number;
     height: number;
     imageUrl: string;
-    image?: string;
 }
 
-// Update the state interface
-interface State {
-    mode: string;
-    opacity: number;
-    frames: FigmaFrame[];
-    isInitialized: boolean;
+interface ModeConfig {
+    id: string;
+    label: string;
+    showOpacity: boolean;
+    labelTop?: boolean;
 }
 
-const state: State = {
-    mode: 'browser',
+// Global state
+let state = {
+    mode: 'web',
     opacity: 0.5,
-    frames: [],
-    isInitialized: false
+    isInitialized: false,
+    isVisible: false,
+    frames: [] as FigmaFrame[]
 };
 
-const OVERLAY_ID = 'figma-overlay';
-const CONTROLS_ID = 'figma-controls';
+// UI Constants
+const MODES: Record<string, ModeConfig> = {
+    WEB: { id: 'web', label: 'Web View', showOpacity: false },
+    SPLIT: { id: 'split', label: 'Split View', showOpacity: true },
+    FIGMA: { id: 'figma', label: 'Figma View', showOpacity: false },
+    OVERLAY: { id: 'overlay', label: 'Overlay View', showOpacity: true },
+    MEASURE: { id: 'measure', label: 'Measure View', showOpacity: true },
+    DRAGGABLE: { id: 'draggable', label: 'Draggable View', showOpacity: true, labelTop: true },
+    BLEND: { id: 'blend', label: 'Blend-Diff View', showOpacity: true, labelTop: true }
+};
 
-// Create basic overlay
-function createOverlay() {
-    const existingOverlay = document.getElementById(OVERLAY_ID);
-    if (existingOverlay) {
-        existingOverlay.remove();
-    }
-
-    const overlay = document.createElement('div');
-    overlay.id = OVERLAY_ID;
-    overlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: black;
-        opacity: ${state.opacity};
-        pointer-events: none;
-        z-index: 999999;
-        transition: all 0.3s ease;
-    `;
+function toggleUI() {
+    console.log('Toggling UI, current state:', state);
     
-    document.body.appendChild(overlay);
-    return overlay;
-}
-
-// Update image in overlay
-function updateImageInOverlay() {
+    // Initialize if not already done
+    if (!state.isInitialized) {
+        console.log('Initializing comparison...');
+        initializeComparison();
+    }
+    
+    // Toggle visibility state
+    state.isVisible = !state.isVisible;
+    console.log('New visibility state:', state.isVisible);
+    
+    // Get UI elements
+    const controls = document.getElementById(CONTROLS_ID);
     const overlay = document.getElementById(OVERLAY_ID);
-    if (!overlay || state.frames.length === 0) return;
-
-    let img = overlay.querySelector('img');
-    if (!img) {
-        img = document.createElement('img');
-        img.style.cssText = `
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            display: block;
-        `;
-        overlay.appendChild(img);
+    
+    // Update visibility
+    if (controls) {
+        console.log('Updating controls visibility');
+        controls.style.display = state.isVisible ? 'flex' : 'none';
+    } else {
+        console.log('Controls not found, creating...');
+        createControlButtons();
     }
-
-    const currentFrame = state.frames[0];
-    img.src = currentFrame.imageUrl;
+    
+    if (overlay) {
+        console.log('Updating overlay visibility');
+        overlay.style.display = state.isVisible ? 'block' : 'none';
+    } else {
+        console.log('Overlay not found, creating...');
+        getOverlay();
+    }
 }
 
-// Create controls with mode buttons and opacity slider
-function createControls() {
-    const existingControls = document.getElementById(CONTROLS_ID);
-    if (existingControls) {
-        existingControls.remove();
-    }
-
+function createControlButtons() {
     const controls = document.createElement('div');
     controls.id = CONTROLS_ID;
+    controls.className = 'design-controls';
     controls.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
+        display: ${state.isVisible ? 'flex' : 'none'};
+        flex-direction: column;
+        gap: 16px;
+        z-index: 999999;
         background: white;
-        padding: 8px;
+        padding: 16px;
         border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        z-index: 1000000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
+
+    // Create mode control group first
+    const modeGroup = document.createElement('div');
+    modeGroup.className = 'design-controls__group';
+
+    const modeLabel = document.createElement('h6');
+    modeLabel.className = 'design-controls__label';
+    modeLabel.textContent = `Mode: ${MODES[state.mode.toUpperCase() as keyof typeof MODES].label}`;
+    modeLabel.style.cssText = `
+        margin: 0 0 8px 0;
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+    `;
+
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.className = 'design-controls__buttons';
+    buttonsContainer.style.cssText = `
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+    `;
+
+    // SVG icons for each mode
+    const modeIcons: Record<keyof typeof MODES, string> = {
+        WEB: '<svg width="40" height="58" viewBox="0 0 40 58" xmlns="http://www.w3.org/2000/svg"><path d="M0 10.85c0 3.796 1.937 7.136 4.87 9.075A10.86 10.86 0 000 29a10.86 10.86 0 004.87 9.075A10.86 10.86 0 000 47.15C0 53.155 4.89 58 10.833 58c5.998 0 10.932-4.89 10.932-10.949V37.028a10.702 10.702 0 007.255 2.822h.196C35.172 39.85 40 34.992 40 29a10.86 10.86 0 00-4.87-9.075A10.86 10.86 0 0040 10.85C40 4.858 35.172 0 29.216 0H10.784C4.828 0 0 4.858 0 10.85zm29.216 7.3c4.006 0 7.255-3.268 7.255-7.3 0-4.031-3.248-7.299-7.255-7.299h-7.451V18.15h7.45zm-10.98 3.55h-7.452c-4.006 0-7.254 3.27-7.254 7.3 0 4.031 3.249 7.3 7.255 7.3h7.451V21.7zm3.529 7.3c0 4.031 3.248 7.3 7.255 7.3h.196c4.006 0 7.255-3.269 7.255-7.3s-3.248-7.3-7.255-7.3h-.196c-4.007 0-7.255 3.269-7.255 7.3zm-10.98 10.85h7.45v7.201c0 4.073-3.329 7.398-7.402 7.398-4.02 0-7.304-3.28-7.304-7.3 0-4.03 3.249-7.299 7.255-7.299zm7.45-36.299V18.15h-7.45c-4.007 0-7.256-3.268-7.256-7.3 0-4.031 3.249-7.299 7.255-7.299h7.451z" fill-rule="evenodd"></path></svg>',
+        SPLIT: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24 10.935v2.131l-8 3.947v-2.23L21.64 12 16 9.21V6.987l8 3.948zM8 14.783L2.36 12 8 9.21V6.987l-8 3.948v2.131l8 3.947v-2.23zM15.047 4h-2.078L8.958 20h2.073l4.016-16z"></path></svg>',
+        FIGMA: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M4 17.162L2 18V5.028L14 0v2.507L4 6.697v10.465zm16-8.156v8.635l-8 3.352v-8.635l8-3.352zM22 6l-12 5.028V24l12-5.028V6zM8 9.697l10-4.19V3L6 8.028V21l2-.838V9.697z"></path></svg>',
+        DRAGGABLE: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M6 13v4l-6-5 6-5v4h3v2H6zm9-2v2h3v4l6-5-6-5v4h-3zm-4-6v14h2V5h-2z"></path></svg>',
+        BLEND: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M22 2v20L2 2h20zm2-2H0v24h24V0z"></path></svg>',
+        MEASURE: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M14 9l10 7.675-4.236.71 2.66 5.423L19.983 24l-2.675-5.474L14 21.389V9zM7 2h5V0H7v2zm7 0h3v3h2V0h-5v2zM2 5V2h3V0H0v5h2zm-2 7h2V7H0v5zm5 5H2v-3H0v5h5v-2zM17 7v1.781l2 1.535V7h-2zM7 19h5v-2H7v2z"></path></svg>',
+        OVERLAY: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24 3v5h-1V5h-2v3h-1V5h-2v5h-1V5h-2v3h-1V5h-2v3h-1V5H9v5H8V5H6v3H5V5H2v14h22v2H0V3h24zM10 17v-6H8.859c0 .91-.809 1.07-1.701 1.111v1h1.488V17H10zm5.078-.985v.958H19v-1.306h-1.826c.822-.74 1.722-1.627 1.722-2.782 0-1.146-.763-1.885-1.941-1.885-.642 0-1.288.204-1.833.656l.424 1.148c.352-.279.715-.524 1.168-.524.486 0 .754.255.754.717-.011.774-.861 1.527-2.39 3.018z"></path></svg>'
+    };
+
+    Object.values(MODES).forEach(mode => {
+        const buttonWrapper = document.createElement('div');
+        buttonWrapper.style.cssText = `
+            position: relative;
+            display: inline-block;
+        `;
+
+        const button = document.createElement('button');
+        button.className = `design-controls__button${state.mode === mode.id ? ' design-controls__button--active' : ''}`;
+        button.innerHTML = modeIcons[mode.id.toUpperCase() as keyof typeof MODES];
+        button.style.cssText = `
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 4px;
+            background: ${state.mode === mode.id ? '#e0e0e0' : '#f0f0f0'};
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            padding: 8px;
+        `;
+
+        // Create tooltip
+        const tooltip = document.createElement('div');
+        tooltip.className = 'design-controls__tooltip';
+        tooltip.textContent = mode.label;
+        tooltip.style.cssText = `
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+            font-size: 12px;
+            border-radius: 4px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            margin-bottom: 4px;
+        `;
+
+        button.addEventListener('mouseover', () => {
+            button.style.background = '#e0e0e0';
+            tooltip.style.opacity = '1';
+        });
+
+        button.addEventListener('mouseout', () => {
+            button.style.background = state.mode === mode.id ? '#e0e0e0' : '#f0f0f0';
+            tooltip.style.opacity = '0';
+        });
+
+        button.addEventListener('click', () => {
+            state.mode = mode.id;
+            modeLabel.textContent = `Mode: ${mode.label}`;
+            updateComparisonMode();
+            
+            // Update active state of all buttons
+            buttonsContainer.querySelectorAll('.design-controls__button').forEach((btn: Element) => {
+                btn.classList.remove('design-controls__button--active');
+                (btn as HTMLElement).style.background = '#f0f0f0';
+            });
+            button.classList.add('design-controls__button--active');
+            button.style.background = '#e0e0e0';
+            
+            // Show/hide opacity slider based on mode
+            opacityGroup.style.display = mode.showOpacity ? 'block' : 'none';
+        });
+
+        buttonWrapper.appendChild(tooltip);
+        buttonWrapper.appendChild(button);
+        buttonsContainer.appendChild(buttonWrapper);
+    });
+
+    modeGroup.appendChild(modeLabel);
+    modeGroup.appendChild(buttonsContainer);
+
+    // Create opacity control group second
+    const opacityGroup = document.createElement('div');
+    opacityGroup.className = 'design-controls__group controls__group--collapseable';
+    opacityGroup.style.display = MODES[state.mode.toUpperCase() as keyof typeof MODES].showOpacity ? 'block' : 'none';
+    
+    const opacityLabel = document.createElement('h6');
+    opacityLabel.className = 'design-controls__label';
+    opacityLabel.textContent = 'Overlay Opacity';
+    opacityLabel.style.cssText = `
+        margin: 0 0 8px 0;
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+    `;
+
+    const sliderContainer = document.createElement('div');
+    sliderContainer.className = 'design-controls__slider';
+    sliderContainer.style.cssText = `
         display: flex;
         align-items: center;
         gap: 8px;
     `;
 
-    // Create mode buttons
-    const modes = [
-        {
-            name: 'Browser',
-            icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M16.36 14C16.44 13.34 16.5 12.68 16.5 12C16.5 11.32 16.44 10.66 16.36 10H19.74C19.9 10.64 20 11.31 20 12C20 12.69 19.9 13.36 19.74 14M14.59 19.56C15.19 18.45 15.65 17.25 15.97 16H18.92C17.96 17.65 16.43 18.93 14.59 19.56M14.34 14H9.66C9.56 13.34 9.5 12.68 9.5 12C9.5 11.32 9.56 10.65 9.66 10H14.34C14.43 10.65 14.5 11.32 14.5 12C14.5 12.68 14.43 13.34 14.34 14M12 19.96C11.17 18.76 10.5 17.43 10.09 16H13.91C13.5 17.43 12.83 18.76 12 19.96M8 8H5.08C6.03 6.34 7.57 5.06 9.4 4.44C8.8 5.55 8.35 6.75 8 8M5.08 16H8C8.35 17.25 8.8 18.45 9.4 19.56C7.57 18.93 6.03 17.65 5.08 16M4.26 14C4.1 13.36 4 12.69 4 12C4 11.31 4.1 10.64 4.26 10H7.64C7.56 10.66 7.5 11.32 7.5 12C7.5 12.68 7.56 13.34 7.64 14M12 4.03C12.83 5.23 13.5 6.57 13.91 8H10.09C10.5 6.57 11.17 5.23 12 4.03M18.92 8H15.97C15.65 6.75 15.19 5.55 14.59 4.44C16.43 5.07 17.96 6.34 18.92 8M12 2C6.47 2 2 6.5 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2Z" fill="currentColor"/>
-            </svg>`
-        },
-        {
-            name: 'Code',
-            icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M8.7 15.9L4.8 12L8.7 8.1C9.09 7.71 9.09 7.09 8.7 6.7C8.31 6.31 7.69 6.31 7.3 6.7L2.7 11.3C2.31 11.69 2.31 12.31 2.7 12.7L7.3 17.3C7.69 17.69 8.31 17.69 8.7 17.3C9.09 16.91 9.09 16.29 8.7 15.9ZM15.3 15.9L19.2 12L15.3 8.1C14.91 7.71 14.91 7.09 15.3 6.7C15.69 6.31 16.31 6.31 16.7 6.7L21.3 11.3C21.69 11.69 21.69 12.31 21.3 12.7L16.7 17.3C16.31 17.69 15.69 17.69 15.3 17.3C14.91 16.91 14.91 16.29 15.3 15.9Z" fill="currentColor"/>
-            </svg>`
-        },
-        {
-            name: 'Figma',
-            icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M15 5H9C7.34 5 6 6.34 6 8C6 9.66 7.34 11 9 11H15C16.66 11 18 9.66 18 8C18 6.34 16.66 5 15 5ZM15 9H9C8.45 9 8 8.55 8 8C8 7.45 8.45 7 9 7H15C15.55 7 16 7.45 16 8C16 8.55 15.55 9 15 9ZM15 11H9C7.34 11 6 12.34 6 14C6 15.66 7.34 17 9 17H15C16.66 17 18 15.66 18 14C18 12.34 16.66 11 15 11ZM15 15H9C8.45 15 8 14.55 8 14C8 13.45 8.45 13 9 13H15C15.55 13 16 13.45 16 14C16 14.55 15.55 15 15 15ZM9 17C7.34 17 6 18.34 6 20C6 21.66 7.34 23 9 23C10.66 23 12 21.66 12 20V17H9Z" fill="currentColor"/>
-            </svg>`
-        },
-        {
-            name: 'Split',
-            icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M18 4V20C18 21.1 17.1 22 16 22H4C2.9 22 2 21.1 2 20V4C2 2.9 2.9 2 4 2H16C17.1 2 18 2.9 18 4ZM13.5 12L16 9.5V4H4V20H16V14.5L13.5 12ZM22 6V18C22 19.1 21.1 20 20 20H19V18H20V6H19V4H20C21.1 4 22 4.9 22 6Z" fill="currentColor"/>
-            </svg>`
-        },
-        {
-            name: 'Blend',
-            icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.58 20 4 16.42 4 12C4 7.58 7.58 4 12 4C16.42 4 20 7.58 20 12C20 16.42 16.42 20 12 20Z" fill="currentColor"/>
-                <path d="M12 11C13.1046 11 14 10.1046 14 9C14 7.89543 13.1046 7 12 7C10.8954 7 10 7.89543 10 9C10 10.1046 10.8954 11 12 11Z" fill="currentColor"/>
-                <path d="M12 13C10.8954 13 10 13.8954 10 15C10 16.1046 10.8954 17 12 17C13.1046 17 14 16.1046 14 15C14 13.8954 13.1046 13 12 13Z" fill="currentColor"/>
-            </svg>`
-        }
-    ];
-
-    modes.forEach(mode => {
-        const button = document.createElement('div');
-        button.style.cssText = `
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-        `;
-
-        const iconButton = document.createElement('button');
-        iconButton.innerHTML = mode.icon;
-        iconButton.title = mode.name;
-        iconButton.style.cssText = `
-            width: 40px;
-            height: 40px;
-            padding: 8px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            background: ${state.mode === mode.name.toLowerCase() ? '#18A0FB' : '#F5F5F5'};
-            color: ${state.mode === mode.name.toLowerCase() ? '#FFFFFF' : '#333333'};
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        `;
-
-        const label = document.createElement('span');
-        label.textContent = mode.name;
-        label.style.cssText = `
-            font-size: 10px;
-            color: #333333;
-            text-align: center;
-        `;
-
-        button.appendChild(iconButton);
-        button.appendChild(label);
-
-        iconButton.addEventListener('mouseover', () => {
-            if (state.mode !== mode.name.toLowerCase()) {
-                iconButton.style.background = '#E8E8E8';
-            }
-        });
-
-        iconButton.addEventListener('mouseout', () => {
-            if (state.mode !== mode.name.toLowerCase()) {
-                iconButton.style.background = '#F5F5F5';
-            }
-        });
-
-        iconButton.addEventListener('click', () => {
-            const newMode = mode.name.toLowerCase();
-            state.mode = newMode;
-            
-            // Update all button styles
-            controls.querySelectorAll('button').forEach(btn => {
-                btn.style.background = btn === iconButton ? '#18A0FB' : '#F5F5F5';
-                btn.style.color = btn === iconButton ? '#FFFFFF' : '#333333';
-            });
-
-            // Update overlay based on mode
-            const overlay = document.getElementById(OVERLAY_ID);
-            if (overlay) {
-                switch (newMode) {
-                    case 'browser':
-                        overlay.style.display = 'none';
-                        break;
-                    case 'figma':
-                        overlay.style.display = 'block';
-                        overlay.style.opacity = '1';
-                        overlay.style.clipPath = 'none';
-                        break;
-                    case 'split':
-                        overlay.style.display = 'block';
-                        overlay.style.opacity = '1';
-                        overlay.style.clipPath = 'inset(0 50% 0 0)';
-                        break;
-                    case 'blend':
-                        overlay.style.display = 'block';
-                        overlay.style.opacity = state.opacity.toString();
-                        overlay.style.clipPath = 'none';
-                        break;
-                }
-            }
-
-            // Show/hide opacity slider based on mode
-            slider.style.display = newMode === 'browser' ? 'none' : 'block';
-        });
-
-        controls.appendChild(button);
-    });
-
-    // Create opacity slider
-    const slider = document.createElement('input');
-    slider.type = 'range';
-    slider.min = '0';
-    slider.max = '1';
-    slider.step = '0.1';
-    slider.value = state.opacity.toString();
-    slider.style.cssText = `
+    const opacitySlider = document.createElement('input');
+    opacitySlider.type = 'range';
+    opacitySlider.id = 'opacity';
+    opacitySlider.name = 'opacity';
+    opacitySlider.min = '0.01';
+    opacitySlider.max = '1';
+    opacitySlider.step = '0.01';
+    opacitySlider.value = String(state.opacity);
+    opacitySlider.className = 'design-controls__range';
+    opacitySlider.style.cssText = `
         width: 100px;
-        margin-left: 8px;
-        accent-color: #18A0FB;
-        display: ${state.mode === 'browser' ? 'none' : 'block'};
+        margin: 0;
+        -webkit-appearance: none;
+        height: 4px;
+        background: #e0e0e0;
+        border-radius: 2px;
+        outline: none;
     `;
 
-    slider.addEventListener('input', (e) => {
-        const target = e.target as HTMLInputElement;
-        state.opacity = parseFloat(target.value);
-        const overlay = document.getElementById(OVERLAY_ID);
-        if (overlay) {
-            overlay.style.opacity = state.opacity.toString();
-        }
+    const opacityValue = document.createElement('span');
+    opacityValue.className = 'design-controls__value';
+    opacityValue.textContent = `${Math.round(state.opacity * 100)}%`;
+    opacityValue.style.cssText = `
+        font-size: 12px;
+        color: #666;
+        min-width: 36px;
+    `;
+
+    opacitySlider.addEventListener('input', () => {
+        state.opacity = Number(opacitySlider.value);
+        opacityValue.textContent = `${Math.round(state.opacity * 100)}%`;
+        updateComparisonMode();
     });
 
-    controls.appendChild(slider);
+    sliderContainer.appendChild(opacitySlider);
+    sliderContainer.appendChild(opacityValue);
+    opacityGroup.appendChild(opacityLabel);
+    opacityGroup.appendChild(sliderContainer);
+
+    // Add groups to controls in new order
+    controls.appendChild(modeGroup);
+    controls.appendChild(opacityGroup);
+
     document.body.appendChild(controls);
+    return controls;
 }
 
-// Initialize everything
-function initialize() {
-    console.log('Initializing overlay and controls');
-    createOverlay();
-    createControls();
+function getOverlay(): HTMLElement {
+    let overlay = document.getElementById(OVERLAY_ID) as HTMLElement;
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = OVERLAY_ID;
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999998;
+            display: ${state.isVisible ? 'block' : 'none'};
+        `;
+        document.body.appendChild(overlay);
+    }
+    return overlay;
 }
 
-// Initialize when the content script loads
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initialize);
-} else {
-    initialize();
+function updateOverlay(frame: FigmaFrame) {
+    const overlay = getOverlay();
+    overlay.innerHTML = '';
+    
+    const img = document.createElement('img');
+    img.src = frame.imageUrl;
+    img.style.cssText = `
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    `;
+    
+    overlay.appendChild(img);
+}
+
+function updateComparisonMode() {
+    const overlay = getOverlay();
+    
+    switch (state.mode) {
+        case MODES.WEB.id:
+            overlay.style.display = 'none';
+            break;
+            
+        case MODES.FIGMA.id:
+            overlay.style.display = 'block';
+            overlay.style.opacity = '1';
+            break;
+            
+        case MODES.SPLIT.id:
+            overlay.style.display = 'block';
+            overlay.style.clipPath = 'inset(0 50% 0 0)';
+            overlay.style.opacity = '1';
+            break;
+            
+        case MODES.OVERLAY.id:
+        case MODES.MEASURE.id:
+        case MODES.BLEND.id:
+            overlay.style.display = 'block';
+            overlay.style.clipPath = 'none';
+            overlay.style.opacity = String(state.opacity);
+            break;
+            
+        case MODES.DRAGGABLE.id:
+            overlay.style.display = 'block';
+            overlay.style.clipPath = 'none';
+            overlay.style.opacity = String(state.opacity);
+            // Additional draggable functionality can be added here
+            break;
+    }
+}
+
+function initializeComparison() {
+    if (state.isInitialized) {
+        console.log('UI already initialized');
+        return;
+    }
+    
+    createControlButtons();
+    getOverlay();
+    state.isInitialized = true;
+    
+    if (state.frames.length > 0) {
+        updateOverlay(state.frames[0]);
+        updateComparisonMode();
+    }
 }
 
 // Message handling
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('Received message:', message);
-    if (message.type === 'figma-frames') {
-        state.frames = message.frames;
-        updateImageInOverlay();
-        sendResponse({ success: true });
+function handleMessage(event: MessageEvent) {
+    const message = event.data;
+    console.log('Received window message:', message);
+    
+    switch (message.type) {
+        case 'INIT_COMPARISON':
+            initializeComparison();
+            // Send response back
+            event.source?.postMessage({ type: 'INIT_COMPARISON_DONE' }, { targetOrigin: '*' });
+            break;
+            
+        case 'FIGMA_FRAMES':
+            if (!Array.isArray(message.frames) || message.frames.length === 0) {
+                console.error('Invalid frames data received');
+                return;
+            }
+            
+            state.frames = message.frames;
+            if (!state.isInitialized) {
+                initializeComparison();
+            }
+            updateOverlay(state.frames[0]);
+            updateComparisonMode();
+            
+            // Send response back
+            event.source?.postMessage({ type: 'FRAMES_RECEIVED' }, { targetOrigin: '*' });
+            break;
     }
-    return true;
+}
+
+// Chrome extension message handling
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('Received chrome message:', message);
+    
+    switch (message.type) {
+        case 'TOGGLE_UI':
+            console.log('Handling TOGGLE_UI message');
+            toggleUI();
+            if (state.frames.length === 0) {
+                console.log('No frames loaded yet');
+            }
+            sendResponse({ success: true, visible: state.isVisible });
+            break;
+            
+        case 'INIT_COMPARISON':
+            console.log('Handling INIT_COMPARISON message');
+            initializeComparison();
+            sendResponse({ success: true });
+            break;
+            
+        case 'FIGMA_FRAMES':
+            console.log('Handling FIGMA_FRAMES message', message.frames);
+            if (!Array.isArray(message.frames) || message.frames.length === 0) {
+                console.error('Invalid frames data received');
+                sendResponse({ success: false, error: 'Invalid frames data' });
+                return;
+            }
+            
+            state.frames = message.frames;
+            if (!state.isInitialized) {
+                initializeComparison();
+            }
+            updateOverlay(state.frames[0]);
+            updateComparisonMode();
+            sendResponse({ success: true });
+            break;
+            
+        default:
+            console.warn('Unknown message type:', message.type);
+            sendResponse({ success: false, error: 'Unknown message type' });
+    }
+    
+    return true; // Required for async response
+});
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded');
+    window.addEventListener('message', handleMessage);
+    
+    // Ensure we're ready to receive messages
+    chrome.runtime.sendMessage({ type: 'CONTENT_READY' }, (response) => {
+        console.log('Content script ready, response:', response);
+    });
 }); 

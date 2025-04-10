@@ -1,25 +1,41 @@
 {
   "name": "figma-design-comparator",
   "version": "1.0.0",
-  "description": "Figma plugin for comparing designs with live websites",
-  "main": "code.js",
+  "description": "Figma plugin for design comparison and Jira integration",
+  "main": "dist/code.js",
   "scripts": {
-    "test": "jest",
     "build": "webpack --mode=production",
-    "watch": "webpack --mode=development --watch"
+    "dev": "webpack --mode=development --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
-  "author": "",
-  "license": "MIT",
+  "dependencies": {
+    "@figma/plugin-typings": "^1.82.0"
+  },
   "devDependencies": {
-    "@figma/plugin-typings": "^1.109.0",
-    "@types/jest": "^29.5.14",
-    "@types/node": "^20.11.0",
+    "@types/jest": "^29.5.12",
+    "@testing-library/dom": "^9.3.4",
+    "@testing-library/jest-dom": "^6.4.2",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "ts-jest": "^29.1.2",
-    "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
-    "webpack": "^5.90.1",
-    "webpack-cli": "^5.1.4"
+    "webpack": "^5.0.0",
+    "webpack-cli": "^5.0.0",
+    "ts-loader": "^9.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.ts"
+    ],
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    }
   }
 }

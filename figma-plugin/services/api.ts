@@ -29,10 +29,7 @@ export async function createJiraIssue(payload: CreateJiraIssuePayload): Promise<
   try {
     const isServerRunning = await checkServerConnection();
     if (!isServerRunning) {
-      return {
-        success: false,
-        error: 'Cannot connect to the server. Please ensure the Next.js app is running on http://localhost:3000'
-      };
+      throw new Error('Cannot connect to the server. Please ensure the Next.js app is running on http://localhost:3000');
     }
 
     const response = await fetch(`${NEXT_APP_URL}/api/jira/issues`, {
@@ -43,15 +40,12 @@ export async function createJiraIssue(payload: CreateJiraIssuePayload): Promise<
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
-      return {
-        success: false,
-        error: data.error || 'Failed to create Jira issue'
-      };
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create Jira issue');
     }
 
+    const data = await response.json();
     return {
       success: true,
       data
@@ -68,10 +62,7 @@ export async function uploadScreenshot(imageData: Uint8Array): Promise<ApiRespon
   try {
     const isServerRunning = await checkServerConnection();
     if (!isServerRunning) {
-      return {
-        success: false,
-        error: 'Cannot connect to the server. Please ensure the Next.js app is running on http://localhost:3000'
-      };
+      throw new Error('Cannot connect to the server. Please ensure the Next.js app is running on http://localhost:3000');
     }
 
     const formData = new FormData();
@@ -83,15 +74,12 @@ export async function uploadScreenshot(imageData: Uint8Array): Promise<ApiRespon
       body: formData,
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
-      return {
-        success: false,
-        error: data.error || 'Failed to upload screenshot'
-      };
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to upload screenshot');
     }
 
+    const data = await response.json();
     return {
       success: true,
       data

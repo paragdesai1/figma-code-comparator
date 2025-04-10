@@ -26,7 +26,7 @@ interface PluginMessage {
 /**
  * Exports a Figma frame to an image and returns frame data
  */
-export async function exportFrameToImage(frame: FrameNode): Promise<FrameData> {
+async function exportFrameToImage(frame: FrameNode): Promise<FrameData> {
   try {
     console.log('Starting frame export for:', frame.name, {
       id: frame.id,

@@ -6,14 +6,6 @@ interface ComparisonState {
   websiteUrl: string | null;
   comparisonMode: 'overlay' | 'split' | 'diff' | 'side-by-side';
   opacity: number;
-  figmaFrameId: string | null;
-  figmaAccessToken: string | null;
-}
-
-declare global {
-  interface Window {
-    onFigmaMessage?: (pluginMessage: any) => void;
-  }
 }
 
 export default function Home() {
@@ -22,87 +14,24 @@ export default function Home() {
     websiteUrl: null,
     comparisonMode: 'overlay',
     opacity: 0.5,
-    figmaFrameId: null,
-    figmaAccessToken: null,
   });
 
   const [isConnected, setIsConnected] = useState(false);
-  const [selectedFrame, setSelectedFrame] = useState<any>(null);
 
   useEffect(() => {
-    // Set up Figma plugin message listener
-    window.onFigmaMessage = (pluginMessage: any) => {
-      if (pluginMessage.type === 'frame-selected') {
-        setSelectedFrame(pluginMessage.frame);
-        setComparisonState(prev => ({
-          ...prev,
-          figmaFrameId: pluginMessage.frame.id
-        }));
+    // Check if Chrome extension is installed and connected
+    const checkConnection = () => {
+      try {
+        chrome.runtime?.sendMessage({ type: 'CHECK_CONNECTION' }, (response) => {
+          setIsConnected(!!response?.connected);
+        });
+      } catch (e) {
+        setIsConnected(false);
       }
     };
 
-    return () => {
-      window.onFigmaMessage = undefined;
-    };
+    checkConnection();
   }, []);
-
-  const connectToFigma = async () => {
-    try {
-      // This will trigger the Figma plugin to open the frame selector
-      window.parent.postMessage({ pluginMessage: { type: 'select-frame' } }, '*');
-    } catch (error) {
-      console.error('Failed to connect to Figma:', error);
-    }
-  };
-
-  const renderFigmaFrame = () => {
-    if (!selectedFrame) {
-      return (
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-          <p className="text-gray-500 mb-4">
-            Connect to Figma plugin to import design
-          </p>
-          <button 
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            onClick={connectToFigma}
-          >
-            Connect to Figma
-          </button>
-        </div>
-      );
-    }
-
-    return (
-      <div className="border rounded-lg p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium">{selectedFrame.name}</h3>
-          <button
-            className="text-red-500 hover:text-red-700"
-            onClick={() => setSelectedFrame(null)}
-          >
-            Disconnect
-          </button>
-        </div>
-        <div 
-          className="bg-white rounded-lg shadow"
-          style={{
-            width: selectedFrame.width,
-            height: selectedFrame.height,
-            maxWidth: '100%',
-            maxHeight: '600px',
-            overflow: 'auto'
-          }}
-        >
-          {/* Figma frame will be rendered here */}
-          <iframe
-            src={`https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(selectedFrame.url)}`}
-            style={{ width: '100%', height: '100%', border: 'none' }}
-            allowFullScreen
-          />
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -127,7 +56,17 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-2xl font-semibold mb-4">Figma Design</h2>
-            {renderFigmaFrame()}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+              <p className="text-gray-500 mb-4">
+                Connect to Figma plugin to import design
+              </p>
+              <button 
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                onClick={() => {/* TODO: Implement Figma connection */}}
+              >
+                Connect to Figma
+              </button>
+            </div>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
@@ -199,16 +138,10 @@ export default function Home() {
         <div className="mt-8 bg-white rounded-lg shadow p-6">
           <h2 className="text-2xl font-semibold mb-4">Comparison View</h2>
           <div className="border rounded-lg h-96 flex items-center justify-center bg-gray-50">
-            {selectedFrame && comparisonState.websiteUrl ? (
-              <div className="relative w-full h-full">
-                {/* Comparison view will be implemented here */}
-                <p className="text-gray-500">Comparison view coming soon...</p>
-              </div>
-            ) : (
-              <p className="text-gray-500">
-                Connect both Figma design and website to start comparison
-              </p>
-            )}
+            {/* TODO: Implement comparison view */}
+            <p className="text-gray-500">
+              Connect both Figma design and website to start comparison
+            </p>
           </div>
         </div>
       </main>
