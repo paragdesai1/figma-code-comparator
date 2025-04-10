@@ -116,6 +116,46 @@ figma-code-comparator/
    - Enable measurement guides to check spacing and alignment
    - Switch between comparison modes to find differences
 
+## Version Control
+
+This project uses a comprehensive versioning system that allows for complete snapshots of the codebase to be saved and recalled. Each version (vx.x) captures the entire state of the project, making it easy to track changes and revert when needed.
+
+### Saving a Version
+
+To save the current state as a new version:
+```bash
+git saveversion vx.x
+```
+This will:
+1. Add all changes to git
+2. Create a commit with the message "Save version vx.x"
+3. Create an annotated tag for that version
+
+### Managing Versions
+
+View all versions:
+```bash
+git tag -l          # List all version tags
+git tag -n          # List versions with descriptions
+```
+
+Compare versions:
+```bash
+git diff vx.x vy.y  # Show differences between versions
+```
+
+### Reverting to a Version
+
+To view a specific version:
+```bash
+git checkout vx.x
+```
+
+To revert to a specific version:
+```bash
+git reset --hard vx.x
+```
+
 ## Contributing
 
 Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
