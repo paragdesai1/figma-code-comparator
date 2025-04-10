@@ -1,0 +1,42 @@
+# Auto detect text files and perform LF normalization
+* text=auto eol=lf
+
+# TypeScript/JavaScript files
+*.ts text diff=typescript
+*.tsx text diff=typescript
+*.js text
+*.jsx text
+
+# JSON files
+*.json text
+
+# CSS files
+*.css text diff=css
+*.scss text diff=css
+
+# HTML files
+*.html text diff=html
+
+# Documentation
+*.md text diff=markdown
+*.txt text
+
+# Graphics
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.svg text
+
+# Font files
+*.ttf binary
+*.eot binary
+*.woff binary
+*.woff2 binary
+
+# Enforce specific file types
+package.json text eol=lf
+package-lock.json text eol=lf
+tsconfig.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf 
