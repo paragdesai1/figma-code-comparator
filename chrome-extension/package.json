@@ -1,6 +1,6 @@
 {
   "name": "figma-design-comparator-extension",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Chrome extension for comparing Figma designs with live websites",
   "scripts": {
     "build": "webpack --mode=production",
