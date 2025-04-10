@@ -1,0 +1,14 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run version sync check
+npm run sync-version
+
+# Run TypeScript type check
+npm run type-check
+
+# Run tests
+npm test
+
+# Run linting
+npm run lint 
