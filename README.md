@@ -5,14 +5,30 @@ A powerful tool for comparing Figma designs with live websites, inspired by Pixe
 ## Features
 
 - Compare Figma designs with live websites in real-time
-- Multiple comparison modes:
-  - Overlay with adjustable opacity
+- Multiple comparison modes with enhanced UI controls:
+  - Figma view for design reference
+  - Web view for implementation
+  - Measure mode with grid overlay
+  - Overlay mode with adjustable opacity
   - Split view with draggable divider
-  - Difference highlighting
-  - Side-by-side comparison
+  - Blend-diff view for highlighting differences
+  - Draggable mode for precise positioning
+- Intuitive control panel with:
+  - Mode-specific tooltips
+  - Smooth hover transitions
+  - Visual feedback on active states
+  - Responsive opacity controls
 - Support for responsive design testing
 - Built-in measurement tools and guides
 - Works with any website (local development, staging, or production)
+
+## Version History
+
+### v1.2.0
+- Enhanced UI controls with improved visual feedback
+- Added smooth hover transitions and tooltips
+- Implemented consistent button styling across modes
+- Updated documentation to reflect UI changes
 
 ## Project Structure
 
@@ -116,49 +132,15 @@ figma-code-comparator/
    - Enable measurement guides to check spacing and alignment
    - Switch between comparison modes to find differences
 
-## Version Control
-
-This project uses a comprehensive versioning system that allows for complete snapshots of the codebase to be saved and recalled. Each version (vx.x) captures the entire state of the project, making it easy to track changes and revert when needed.
-
-### Saving a Version
-
-To save the current state as a new version:
-```bash
-git saveversion vx.x
-```
-This will:
-1. Add all changes to git
-2. Create a commit with the message "Save version vx.x"
-3. Create an annotated tag for that version
-
-### Managing Versions
-
-View all versions:
-```bash
-git tag -l          # List all version tags
-git tag -n          # List versions with descriptions
-```
-
-Compare versions:
-```bash
-git diff vx.x vy.y  # Show differences between versions
-```
-
-### Reverting to a Version
-
-To view a specific version:
-```bash
-git checkout vx.x
-```
-
-To revert to a specific version:
-```bash
-git reset --hard vx.x
-```
-
 ## Contributing
 
 Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+When contributing, please ensure all changes maintain synchronization across:
+- Version numbers in package.json and manifest.json
+- UI/Design elements and controls
+- Documentation and README
+- Code implementation and comments
 
 ## License
 
