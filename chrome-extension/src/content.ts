@@ -30,12 +30,12 @@ let state = {
 // UI Constants
 const MODES: Record<string, ModeConfig> = {
     WEB: { id: 'web', label: 'Web View', showOpacity: false },
-    SPLIT: { id: 'split', label: 'Split View', showOpacity: true },
     FIGMA: { id: 'figma', label: 'Figma View', showOpacity: false },
     OVERLAY: { id: 'overlay', label: 'Overlay View', showOpacity: true },
+    SPLIT: { id: 'split', label: 'Split View', showOpacity: true },
+    BLEND: { id: 'blend', label: 'Blend-Diff View', showOpacity: true, labelTop: true },
     MEASURE: { id: 'measure', label: 'Measure View', showOpacity: true },
     DRAGGABLE: { id: 'draggable', label: 'Draggable View', showOpacity: true, labelTop: true },
-    BLEND: { id: 'blend', label: 'Blend-Diff View', showOpacity: true, labelTop: true }
 };
 
 function toggleUI() {
@@ -147,6 +147,7 @@ function createControlButtons() {
             justify-content: center;
             transition: all 0.2s;
             padding: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         `;
 
         // Create tooltip
@@ -172,11 +173,15 @@ function createControlButtons() {
 
         button.addEventListener('mouseover', () => {
             button.style.background = '#e0e0e0';
+            button.style.transform = 'translateY(-1px)';
+            button.style.boxShadow = '0 2px 5px rgba(0,0,0,0.15)';
             tooltip.style.opacity = '1';
         });
 
         button.addEventListener('mouseout', () => {
             button.style.background = state.mode === mode.id ? '#e0e0e0' : '#f0f0f0';
+            button.style.transform = 'translateY(0)';
+            button.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
             tooltip.style.opacity = '0';
         });
 
