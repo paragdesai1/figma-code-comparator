@@ -3,9 +3,10 @@
   "version": "1.2.0",
   "description": "Chrome extension for comparing Figma designs with live websites",
   "scripts": {
-    "build": "webpack --mode=production",
+    "build": "node scripts/sync-version.js && webpack --mode=production",
     "dev": "webpack --mode=development --watch",
-    "test": "jest"
+    "test": "jest",
+    "sync-version": "node scripts/sync-version.js"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",
